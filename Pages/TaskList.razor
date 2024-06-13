@@ -1,0 +1,72 @@
+﻿@page "/tasks"
+@using TaskManagementApp.Models
+@using TaskManagementApp.Services
+@using System.Text.Json
+@using Microsoft.JSInterop;
+@inject TaskService TaskService
+@inject NavigationManager Navigation
+
+<PageTitle>Tareas</PageTitle>
+
+<h3>Tareas</h3>
+
+@if (tasks == null)
+{
+    <p>Cargando...</p>
+}
+else
+{
+    
+    <div>
+        @foreach (var task in tasks)
+        {
+            <div>                             
+                <h4>Título: @task.Title</h4>
+                <p> Descripción: @task.Description</p>
+                <p>Estado: @task.Status</p>
+                <a href="/task/@task.Id">Editar</a>
+                <button @onclick="() => DeleteTask(task.Id)">Eliminar</button>
+            </div>
+        }
+    </div>
+    <button @onclick="PreviousPage" disabled="@(currentPage == 1)">Anterior</button>
+    <button @onclick="NextPage" disabled="@(currentPage * pageSize >= totalTasks)">Siguiente</button>
+}
+
+@code {
+    private List<TaskItem> tasks;
+    private int totalTasks;
+    private int currentPage = 1;
+    private int pageSize = 5;
+
+   
+    protected override async Task OnInitializedAsync()
+    {
+       await LoadTasksAsync();
+    }
+        
+    private async Task LoadTasksAsync()
+    {
+        tasks = await TaskService.GetTasksAsync(currentPage, pageSize);
+        totalTasks = await TaskService.GetTotalTasksCountAsync();
+    }
+
+    private async Task NextPage()
+    {
+        currentPage++;
+        await LoadTasksAsync();
+    }
+
+    private async Task PreviousPage()
+    {
+        currentPage--;
+        await LoadTasksAsync();
+    }
+
+    private async Task DeleteTask(int taskId)
+    {
+        await TaskService.DeleteTaskAsync(taskId);
+        await LoadTasksAsync();
+    }
+    
+}

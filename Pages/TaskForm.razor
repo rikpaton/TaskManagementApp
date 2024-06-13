@@ -1,0 +1,68 @@
+﻿@page "/task/{TaskId:int?}"
+@using TaskManagementApp.Models
+@using TaskManagementApp.Services
+@inject TaskService TaskService
+@inject NavigationManager Navigation
+
+<PageTitle>@(TaskId.HasValue ? "Editar Tarea" : "Añadir Tarea")</PageTitle>
+
+<h3>@(TaskId.HasValue ? "Editar Tarea" : "Añadir Tarea")</h3>
+
+<EditForm Model="@task" OnValidSubmit="HandleValidSubmit">
+   <DataAnnotationsValidator />
+   <ValidationSummary />
+
+
+    <div>
+        <label>Título:</label>
+        <InputText @bind-Value="task.Title" />
+    </div>
+    <div>
+        <label>Descripción:</label>
+        <InputText @bind-Value="task.Description" />
+    </div>
+    <div>
+        <label>Estado:</label>
+        <InputSelect @bind-Value="task.Status">
+        @foreach (EstadoTarea status in Enum.GetValues(typeof(EstadoTarea)))
+            {
+                <option value="@status">@status</option>
+            }
+        </InputSelect>
+    </div>
+
+    <button type="submit">Guardar</button>
+</EditForm>
+
+@code {
+    [Parameter]
+    public int? TaskId { get; set; }
+
+    private TaskItem task = new TaskItem();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (TaskId.HasValue)
+        {
+            task = await TaskService.GetTaskByIdAsync(TaskId.Value);
+            if (task == null)
+            {
+                Navigation.NavigateTo("/tasks");
+            }
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (TaskId.HasValue)
+        {
+            await TaskService.UpdateTaskAsync(task);
+        }
+        else
+        {
+            await TaskService.AddTaskAsync(task);
+        }
+
+        Navigation.NavigateTo("/tasks");
+    }
+}
